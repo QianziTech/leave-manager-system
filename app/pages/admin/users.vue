@@ -1,9 +1,9 @@
 <template>
   <div>
-    <a-page-header title="User Management">
+    <a-page-header title="用户管理">
       <template #extra>
         <a-button type="primary" @click="openCreateModal">
-          <PlusOutlined /> Add User
+          <PlusOutlined /> 新增用户
         </a-button>
       </template>
     </a-page-header>
@@ -15,14 +15,14 @@
         </template>
         <template v-if="column.key === 'active'">
           <a-tag :color="record.active ? 'green' : 'red'">
-            {{ record.active ? 'Active' : 'Inactive' }}
+            {{ record.active ? '在职' : '离职' }}
           </a-tag>
         </template>
         <template v-if="column.key === 'actions'">
           <a-space>
-            <a-button size="small" @click="openEditModal(record)">Edit</a-button>
-            <a-popconfirm title="Deactivate this user?" @confirm="handleDelete(record.id)">
-              <a-button size="small" danger :disabled="!record.active">Deactivate</a-button>
+            <a-button size="small" @click="openEditModal(record)">编辑</a-button>
+            <a-popconfirm title="确定停用该用户？" @confirm="handleDelete(record.id)">
+              <a-button size="small" danger :disabled="!record.active">停用</a-button>
             </a-popconfirm>
           </a-space>
         </template>
@@ -31,29 +31,29 @@
 
     <a-modal
       v-model:open="modalVisible"
-      :title="editingUser ? 'Edit User' : 'New User'"
+      :title="editingUser ? '编辑用户' : '新增用户'"
       @ok="handleSave"
       @cancel="resetForm"
     >
       <a-form :model="form" layout="vertical">
-        <a-form-item label="Username" required>
+        <a-form-item label="用户名" required>
           <a-input v-model:value="form.username" :disabled="!!editingUser" />
         </a-form-item>
-        <a-form-item label="Password" :required="!editingUser">
+        <a-form-item label="密码" :required="!editingUser">
           <a-input-password v-model:value="form.password" />
         </a-form-item>
-        <a-form-item label="Real Name" required>
+        <a-form-item label="姓名" required>
           <a-input v-model:value="form.realName" />
         </a-form-item>
-        <a-form-item label="Department" required>
+        <a-form-item label="部门" required>
           <a-input v-model:value="form.department" />
         </a-form-item>
-        <a-form-item label="Role" required>
+        <a-form-item label="角色" required>
           <a-select v-model:value="form.role">
-            <a-select-option value="employee">Employee</a-select-option>
-            <a-select-option value="supervisor">Supervisor</a-select-option>
-            <a-select-option value="dept_head">Department Head</a-select-option>
-            <a-select-option value="admin">Admin</a-select-option>
+            <a-select-option value="employee">员工</a-select-option>
+            <a-select-option value="supervisor">主管</a-select-option>
+            <a-select-option value="dept_head">部门经理</a-select-option>
+            <a-select-option value="admin">管理员</a-select-option>
           </a-select>
         </a-form-item>
       </a-form>
@@ -63,17 +63,10 @@
 
 <script setup lang="ts">
 import { PlusOutlined } from '@ant-design/icons-vue'
-
 import { message } from 'ant-design-vue'
+import { roleLabels } from '~/composables/useLabels'
 
 definePageMeta({ middleware: ['auth', 'admin'] })
-
-const roleLabels: Record<string, string> = {
-  employee: 'Employee',
-  supervisor: 'Supervisor',
-  dept_head: 'Dept Head',
-  admin: 'Admin',
-}
 
 const users = ref<any[]>([])
 const loading = ref(false)
@@ -90,12 +83,12 @@ const form = reactive({
 
 const columns = [
   { title: 'ID', dataIndex: 'id', key: 'id' },
-  { title: 'Username', dataIndex: 'username', key: 'username' },
-  { title: 'Name', dataIndex: 'real_name', key: 'name' },
-  { title: 'Department', dataIndex: 'department', key: 'dept' },
-  { title: 'Role', key: 'role' },
-  { title: 'Status', key: 'active' },
-  { title: 'Actions', key: 'actions', width: 200 },
+  { title: '用户名', dataIndex: 'username', key: 'username' },
+  { title: '姓名', dataIndex: 'real_name', key: 'name' },
+  { title: '部门', dataIndex: 'department', key: 'dept' },
+  { title: '角色', key: 'role' },
+  { title: '状态', key: 'active' },
+  { title: '操作', key: 'actions', width: 200 },
 ]
 
 async function fetchUsers() {
@@ -145,7 +138,7 @@ async function handleSave() {
     modalVisible.value = false
     await fetchUsers()
   } catch (e: any) {
-    message.error(e?.data?.statusMessage || 'Failed to save user')
+    message.error(e?.data?.statusMessage || '保存用户失败')
   }
 }
 

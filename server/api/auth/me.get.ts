@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
     .get(userId) as any
 
   if (!user) {
-    throw createError({ statusCode: 404, statusMessage: 'User not found' })
+    throw createError({ statusCode: 404, statusMessage: '用户不存在' })
   }
 
   return {

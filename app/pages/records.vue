@@ -1,9 +1,9 @@
 <template>
   <div>
-    <a-page-header title="Leave Records">
+    <a-page-header title="请假记录">
       <template #extra>
         <a-button type="primary" @click="navigateTo('/apply')">
-          <FormOutlined /> Apply Leave
+          <FormOutlined /> 申请请假
         </a-button>
       </template>
     </a-page-header>
@@ -12,15 +12,15 @@
       <a-space>
         <a-select
           v-model:value="filters.status"
-          placeholder="Filter by status"
+          placeholder="按状态筛选"
           allow-clear
           style="width: 160px"
           @change="fetchData"
         >
-          <a-select-option value="pending">Pending</a-select-option>
-          <a-select-option value="approved">Approved</a-select-option>
-          <a-select-option value="rejected">Rejected</a-select-option>
-          <a-select-option value="withdrawn">Withdrawn</a-select-option>
+          <a-select-option value="pending">待审批</a-select-option>
+          <a-select-option value="approved">已通过</a-select-option>
+          <a-select-option value="rejected">已拒绝</a-select-option>
+          <a-select-option value="withdrawn">已撤回</a-select-option>
         </a-select>
       </a-space>
 
@@ -34,11 +34,14 @@
         @row-click="handleRowClick"
       >
         <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'type'">
+            {{ leaveTypeLabels[record.type] || record.type }}
+          </template>
           <template v-if="column.key === 'status'">
             <LeaveStatusTag :status="record.status" />
           </template>
           <template v-if="column.key === 'duration'">
-            {{ record.duration }} day(s)
+            {{ record.duration }} 天
           </template>
         </template>
       </a-table>
@@ -48,6 +51,7 @@
 
 <script setup lang="ts">
 import { FormOutlined } from '@ant-design/icons-vue'
+import { leaveTypeLabels } from '~/composables/useLabels'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -64,14 +68,14 @@ const filters = reactive({
 })
 
 const columns = [
-  { title: 'Type', dataIndex: 'type', key: 'type' },
-  { title: 'Applicant', dataIndex: 'applicant_name', key: 'applicant' },
-  { title: 'Department', dataIndex: 'applicant_department', key: 'dept' },
-  { title: 'Start', dataIndex: 'start_time', key: 'start' },
-  { title: 'End', dataIndex: 'end_time', key: 'end' },
-  { title: 'Duration', key: 'duration' },
-  { title: 'Status', key: 'status' },
-  { title: 'Created', dataIndex: 'created_at', key: 'created' },
+  { title: '请假类型', key: 'type' },
+  { title: '申请人', dataIndex: 'applicant_name', key: 'applicant' },
+  { title: '部门', dataIndex: 'applicant_department', key: 'dept' },
+  { title: '开始时间', dataIndex: 'start_time', key: 'start' },
+  { title: '结束时间', dataIndex: 'end_time', key: 'end' },
+  { title: '天数', key: 'duration' },
+  { title: '状态', key: 'status' },
+  { title: '提交时间', dataIndex: 'created_at', key: 'created' },
 ]
 
 async function fetchData() {

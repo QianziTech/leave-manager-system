@@ -10,10 +10,10 @@
         <template #overlay>
           <a-menu>
             <a-menu-item key="profile" @click="navigateTo('/profile')">
-              <UserOutlined /> Profile
+              <UserOutlined /> 个人中心
             </a-menu-item>
             <a-menu-item key="logout" @click="handleLogout">
-              <LogoutOutlined /> Logout
+              <LogoutOutlined /> 退出登录
             </a-menu-item>
           </a-menu>
         </template>
@@ -24,18 +24,11 @@
 
 <script setup lang="ts">
 import { UserOutlined, LogoutOutlined } from '@ant-design/icons-vue'
+import { roleLabels } from '~/composables/useLabels'
 
 const { user, logout } = useAuth()
 
-const roleLabel = computed(() => {
-  const labels: Record<string, string> = {
-    employee: 'Employee',
-    supervisor: 'Supervisor',
-    dept_head: 'Dept Head',
-    admin: 'Admin',
-  }
-  return labels[user.value?.role || ''] || ''
-})
+const roleLabel = computed(() => roleLabels[user.value?.role || ''] || '')
 
 async function handleLogout() {
   await logout()

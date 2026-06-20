@@ -1,8 +1,8 @@
 <template>
   <a-layout-sider v-model:collapsed="collapsed" collapsible class="sidebar">
     <div class="logo">
-      <span v-if="!collapsed">Leave Manager</span>
-      <span v-else>LM</span>
+      <span v-if="!collapsed">请假管理</span>
+      <span v-else>请假</span>
     </div>
     <a-menu
       theme="dark"
@@ -12,23 +12,23 @@
     >
       <a-menu-item key="/records">
         <FileTextOutlined />
-        <span>Leave Records</span>
+        <span>请假记录</span>
       </a-menu-item>
       <a-menu-item key="/apply">
         <FormOutlined />
-        <span>Apply Leave</span>
+        <span>申请请假</span>
       </a-menu-item>
       <a-menu-item v-if="canApprove" key="/approvals">
         <CheckCircleOutlined />
-        <span>Pending Approvals</span>
+        <span>待审批</span>
       </a-menu-item>
       <a-menu-item key="/profile">
         <UserOutlined />
-        <span>Profile</span>
+        <span>个人中心</span>
       </a-menu-item>
       <a-menu-item v-if="isAdmin" key="/admin/users">
         <SettingOutlined />
-        <span>User Management</span>
+        <span>用户管理</span>
       </a-menu-item>
     </a-menu>
   </a-layout-sider>

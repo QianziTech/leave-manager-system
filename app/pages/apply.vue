@@ -1,6 +1,6 @@
 <template>
   <div>
-    <a-page-header title="Apply Leave" @back="() => $router.back()" />
+    <a-page-header title="申请请假" @back="() => $router.back()" />
     <LeaveForm @submit="handleSubmit" />
   </div>
 </template>
@@ -18,7 +18,7 @@ async function handleSubmit(values: any) {
     })
     await navigateTo('/records')
   } catch (e: any) {
-    message.error(e?.data?.statusMessage || 'Failed to submit leave')
+    message.error(e?.data?.statusMessage || '提交请假失败')
   }
 }
 </script>

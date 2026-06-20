@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   const { username, password } = await readBody(event)
 
   if (!username || !password) {
-    throw createError({ statusCode: 400, statusMessage: 'Username and password required' })
+    throw createError({ statusCode: 400, statusMessage: '请输入用户名和密码' })
   }
 
   const db = getDb()
@@ -15,11 +15,11 @@ export default defineEventHandler(async (event) => {
     .get(username) as any
 
   if (!user || !user.active) {
-    throw createError({ statusCode: 401, statusMessage: 'Invalid credentials' })
+    throw createError({ statusCode: 401, statusMessage: '用户名或密码错误' })
   }
 
   if (!comparePassword(password, user.password_hash)) {
-    throw createError({ statusCode: 401, statusMessage: 'Invalid credentials' })
+    throw createError({ statusCode: 401, statusMessage: '用户名或密码错误' })
   }
 
   const token = await createToken({

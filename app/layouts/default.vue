@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-useHead({ titleTemplate: '%s - Leave Manager' })
+useHead({ titleTemplate: '%s - 请假管理系统' })
 </script>
 
 <style scoped>

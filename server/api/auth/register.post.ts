@@ -4,20 +4,20 @@ import { hashPassword } from '../../utils/auth'
 export default defineEventHandler(async (event) => {
   const currentUser = event.context.user
   if (!currentUser || currentUser.role !== 'admin') {
-    throw createError({ statusCode: 403, statusMessage: 'Admin only' })
+    throw createError({ statusCode: 403, statusMessage: '仅管理员可操作' })
   }
 
   const { username, password, realName, department, role, supervisorId } = await readBody(event)
 
   if (!username || !password || !realName || !department || !role) {
-    throw createError({ statusCode: 400, statusMessage: 'Missing required fields' })
+    throw createError({ statusCode: 400, statusMessage: '请填写所有必填字段' })
   }
 
   const db = getDb()
 
   const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username)
   if (existing) {
-    throw createError({ statusCode: 409, statusMessage: 'Username already exists' })
+    throw createError({ statusCode: 409, statusMessage: '用户名已存在' })
   }
 
   const result = db

@@ -1,20 +1,20 @@
 <template>
   <div>
-    <a-card title="Leave Management System">
+    <a-card title="请假管理系统">
       <a-form :model="form" @finish="handleLogin">
-        <a-form-item name="username" :rules="[{ required: true, message: 'Enter username' }]">
-          <a-input v-model:value="form.username" placeholder="Username" size="large">
+        <a-form-item name="username" :rules="[{ required: true, message: '请输入用户名' }]">
+          <a-input v-model:value="form.username" placeholder="用户名" size="large">
             <template #prefix><UserOutlined /></template>
           </a-input>
         </a-form-item>
-        <a-form-item name="password" :rules="[{ required: true, message: 'Enter password' }]">
-          <a-input-password v-model:value="form.password" placeholder="Password" size="large">
+        <a-form-item name="password" :rules="[{ required: true, message: '请输入密码' }]">
+          <a-input-password v-model:value="form.password" placeholder="密码" size="large">
             <template #prefix><LockOutlined /></template>
           </a-input-password>
         </a-form-item>
         <a-form-item>
           <a-button type="primary" html-type="submit" :loading="loading" block size="large">
-            Login
+            登录
           </a-button>
         </a-form-item>
       </a-form>
@@ -44,7 +44,7 @@ async function handleLogin() {
     await login(form.username, form.password)
     await navigateTo('/records')
   } catch (e: any) {
-    error.value = e?.data?.statusMessage || 'Login failed'
+    error.value = e?.data?.statusMessage || '登录失败'
   } finally {
     loading.value = false
   }

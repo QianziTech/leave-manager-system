@@ -9,15 +9,15 @@ export default defineEventHandler(async (event) => {
   const approval = db.prepare('SELECT * FROM approvals WHERE id = ?').get(approvalId) as any
 
   if (!approval) {
-    throw createError({ statusCode: 404, statusMessage: 'Approval not found' })
+    throw createError({ statusCode: 404, statusMessage: '审批记录不存在' })
   }
 
   if (approval.approver_id !== userId) {
-    throw createError({ statusCode: 403, statusMessage: 'Not your approval task' })
+    throw createError({ statusCode: 403, statusMessage: '无权审批该记录' })
   }
 
   if (approval.decision !== null) {
-    throw createError({ statusCode: 400, statusMessage: 'Already decided' })
+    throw createError({ statusCode: 400, statusMessage: '该审批已处理' })
   }
 
   db.prepare("UPDATE approvals SET decision = 'rejected', comment = ? WHERE id = ?").run(comment || null, approvalId)

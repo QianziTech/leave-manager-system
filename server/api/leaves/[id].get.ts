@@ -12,12 +12,12 @@ export default defineEventHandler(async (event) => {
   `).get(id) as any
 
   if (!leave) {
-    throw createError({ statusCode: 404, statusMessage: 'Leave not found' })
+    throw createError({ statusCode: 404, statusMessage: '请假记录不存在' })
   }
 
-  // Role-based access control
+  // 角色权限控制
   if (role === 'employee' && leave.user_id !== userId) {
-    throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
+    throw createError({ statusCode: 403, statusMessage: '无权查看该记录' })
   }
 
   const approvals = db.prepare(`

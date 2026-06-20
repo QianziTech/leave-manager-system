@@ -3,7 +3,7 @@ import { getDb } from '../../utils/db'
 export default defineEventHandler(async (event) => {
   const { role } = event.context.user
   if (role !== 'admin') {
-    throw createError({ statusCode: 403, statusMessage: 'Admin only' })
+    throw createError({ statusCode: 403, statusMessage: '仅管理员可操作' })
   }
 
   const db = getDb()

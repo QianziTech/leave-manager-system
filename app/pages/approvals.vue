@@ -1,5 +1,6 @@
 <template>
   <div>
+    <a-page-header title="待审批列表" />
     <a-timeline>
       <a-timeline-item
         v-for="approval in approvalList"
@@ -9,31 +10,30 @@
         <a-card size="small">
           <a-card-meta
             :title="approval.applicant_name"
-            :description="`${approval.leave_type} — ${approval.duration} day(s)`"
+            :description="`${leaveTypeLabels[approval.leave_type] || approval.leave_type} — ${approval.duration} 天`"
           />
           <p style="margin-top: 8px">{{ approval.reason }}</p>
           <p class="date-range">{{ approval.start_time }} ~ {{ approval.end_time }}</p>
           <a-space style="margin-top: 8px">
             <a-button type="primary" size="small" @click="handleAction(approval.id, 'approve')">
-              Approve
+              通过
             </a-button>
-            <a-popconfirm title="Reject this leave?" @confirm="handleAction(approval.id, 'reject')">
-              <a-button danger size="small">Reject</a-button>
+            <a-popconfirm title="确定拒绝此请假申请？" @confirm="handleAction(approval.id, 'reject')">
+              <a-button danger size="small">拒绝</a-button>
             </a-popconfirm>
           </a-space>
         </a-card>
       </a-timeline-item>
     </a-timeline>
+    <a-empty v-if="!approvalList.length" description="暂无待审批记录" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { message } from 'ant-design-vue'
+import { leaveTypeLabels } from '~/composables/useLabels'
 
 definePageMeta({ middleware: 'auth' })
-
-const router = useRouter()
-const route = useRoute()
 
 const approvalList = ref<any[]>([])
 
@@ -50,10 +50,10 @@ async function handleAction(approvalId: number, action: 'approve' | 'reject') {
       method: 'POST',
       body: { comment: '' },
     })
-    message.success(action === 'approve' ? 'Approved' : 'Rejected')
+    message.success(action === 'approve' ? '已通过审批' : '已拒绝审批')
     await fetchPending()
   } catch (e: any) {
-    message.error(e?.data?.statusMessage || 'Action failed')
+    message.error(e?.data?.statusMessage || '操作失败')
   }
 }
 
