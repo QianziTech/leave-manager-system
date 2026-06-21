@@ -34,6 +34,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: nuxt-output
+          include-hidden-files: true
           path: |
             .output
             ecosystem.config.cjs
@@ -68,6 +69,12 @@ jobs:
 
           mkdir -p "$DEPLOY_DIR"
           mkdir -p "$DEPLOY_DIR/.data"
+
+          if [ ! -d "release/.output" ]; then
+            echo "release/.output not found. Check build artifact upload/download."
+            find release -maxdepth 3 -type d -print
+            exit 1
+          fi
 
           rsync -a --delete \
             --exclude ".data" \
