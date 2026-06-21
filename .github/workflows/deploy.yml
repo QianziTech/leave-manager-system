@@ -55,7 +55,7 @@ jobs:
         shell: bash
         env:
           APP_NAME: leave-manager-system
-          DEPLOY_DIR: /www/leave-manager-system
+          DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
           APP_PORT: ${{ vars.APP_PORT || '3000' }}
           NUXT_JWT_SECRET: ${{ secrets.NUXT_JWT_SECRET }}
         run: |
@@ -63,6 +63,8 @@ jobs:
             echo "NUXT_JWT_SECRET is required"
             exit 1
           fi
+
+          DEPLOY_DIR="${DEPLOY_DIR:-$HOME/apps/leave-manager-system}"
 
           mkdir -p "$DEPLOY_DIR"
           mkdir -p "$DEPLOY_DIR/.data"
