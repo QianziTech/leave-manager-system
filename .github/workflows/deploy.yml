@@ -1,0 +1,81 @@
+name: Deploy-APP
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuxt-output
+          path: |
+            .output
+            ecosystem.config.cjs
+            package.json
+            pnpm-lock.yaml
+
+  deploy:
+    needs: build
+    runs-on: self-hosted
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nuxt-output
+          path: release
+
+      - name: Deploy on VPS
+        shell: bash
+        env:
+          APP_NAME: leave-manager-system
+          DEPLOY_DIR: /www/leave-manager-system
+          APP_PORT: ${{ vars.APP_PORT || '3000' }}
+          NUXT_JWT_SECRET: ${{ secrets.NUXT_JWT_SECRET }}
+        run: |
+          if [ -z "$NUXT_JWT_SECRET" ]; then
+            echo "NUXT_JWT_SECRET is required"
+            exit 1
+          fi
+
+          mkdir -p "$DEPLOY_DIR"
+          mkdir -p "$DEPLOY_DIR/.data"
+
+          rsync -a --delete \
+            --exclude ".data" \
+            release/.output/ "$DEPLOY_DIR/.output/"
+
+          cp release/ecosystem.config.cjs "$DEPLOY_DIR/ecosystem.config.cjs"
+          cp release/package.json "$DEPLOY_DIR/package.json"
+          cp release/pnpm-lock.yaml "$DEPLOY_DIR/pnpm-lock.yaml"
+
+          cd "$DEPLOY_DIR"
+
+          APP_CWD="$DEPLOY_DIR" PM2_APP_NAME="$APP_NAME" pm2 startOrReload ecosystem.config.cjs --env production --update-env
+          pm2 save
