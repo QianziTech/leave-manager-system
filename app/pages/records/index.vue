@@ -43,6 +43,15 @@
           <template v-if="column.key === 'duration'">
             {{ record.duration }} 天
           </template>
+          <template v-if="column.key === 'start'">
+            {{ formatDateTime(record.start_time) }}
+          </template>
+          <template v-if="column.key === 'end'">
+            {{ formatDateTime(record.end_time) }}
+          </template>
+          <template v-if="column.key === 'created'">
+            {{ formatDateTime(record.created_at) }}
+          </template>
           <template v-if="column.key === 'actions'">
             <NuxtLink :to="`/records/${record.id}`">查看详情</NuxtLink>
           </template>
@@ -59,6 +68,7 @@ import { leaveTypeLabels } from '~/composables/useLabels'
 definePageMeta({ middleware: 'auth' })
 
 const router = useRouter()
+const { formatDateTime } = useDateTime()
 
 const data = ref<any[]>([])
 const loading = ref(false)

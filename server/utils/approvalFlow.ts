@@ -17,7 +17,7 @@ export function getLeaveApprovalThreshold(db: Database.Database) {
 
 export function resolveApprovalFlow(db: Database.Database, applicantId: number, duration: number) {
   const user = db.prepare(`
-    SELECT u.id, u.supervisor_id, u.department_id, u.real_name,
+    SELECT u.id, u.supervisor_id, u.department_id, u.real_name, u.role,
            d.name as department_name, d.manager_id
     FROM users u
     LEFT JOIN departments d ON u.department_id = d.id
@@ -29,19 +29,20 @@ export function resolveApprovalFlow(db: Database.Database, applicantId: number, 
   }
 
   const threshold = getLeaveApprovalThreshold(db)
+  const needMultiLevel = duration > threshold && user.role === 'employee'
   const levels: ApprovalLevel[] = []
 
-  const supervisor = findSupervisor(db, user.supervisor_id, user.manager_id, user.id)
+  const supervisor = findDirectApprover(db, user, needMultiLevel)
   if (supervisor) {
     levels.push({
       level: 1,
-      role: 'supervisor',
+      role: user.role === 'supervisor' ? 'dept_head' : 'supervisor',
       approverName: supervisor.real_name,
       approverId: supervisor.id,
     })
   }
 
-  if (duration > threshold) {
+  if (needMultiLevel) {
     const deptHead = findDepartmentHead(db, user.department_id, user.manager_id, supervisor?.id || 0)
     if (deptHead) {
       levels.push({
@@ -57,7 +58,7 @@ export function resolveApprovalFlow(db: Database.Database, applicantId: number, 
     user,
     levels,
     threshold,
-    needMultiLevel: duration > threshold,
+    needMultiLevel,
   }
 }
 
@@ -75,6 +76,13 @@ export function assertApprovalFlowReady(
     throw createError({ statusCode: 404, statusMessage: '用户不存在' })
   }
 
+  if (flow.user.role === 'employee' && !flow.levels.some(level => level.level === 1)) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: '员工请假需要直属主管审批，请先在用户管理为该员工配置直属上级',
+    })
+  }
+
   if (flow.levels.length === 0) {
     throw createError({
       statusCode: 400,
@@ -88,6 +96,47 @@ export function assertApprovalFlowReady(
       statusMessage: '超过阈值的请假需要二级审批，请配置部门经理或部门经理角色用户',
     })
   }
+}
+
+function findDirectApprover(db: Database.Database, user: any, needMultiLevel: boolean) {
+  if (user.role === 'supervisor') {
+    return findDepartmentManager(db, user.manager_id, user.id)
+  }
+
+  if (user.role === 'employee') {
+    return findEmployeeSupervisor(db, user.supervisor_id, user.department_id, user.id)
+  }
+
+  return findSupervisor(db, user.supervisor_id, needMultiLevel ? null : user.manager_id, user.id)
+}
+
+function findEmployeeSupervisor(
+  db: Database.Database,
+  supervisorId: number | null,
+  departmentId: number | null,
+  applicantId: number,
+) {
+  if (!supervisorId || supervisorId === applicantId) {
+    return null
+  }
+
+  return db.prepare(
+    "SELECT id, real_name FROM users WHERE id = ? AND department_id = ? AND role = 'supervisor' AND active = 1",
+  ).get(supervisorId, departmentId) as any
+}
+
+function findDepartmentManager(
+  db: Database.Database,
+  managerId: number | null,
+  applicantId: number,
+) {
+  if (!managerId || managerId === applicantId) {
+    return null
+  }
+
+  return db.prepare(
+    "SELECT id, real_name FROM users WHERE id = ? AND role = 'dept_head' AND active = 1",
+  ).get(managerId) as any
 }
 
 function findSupervisor(

@@ -46,10 +46,10 @@
       </a-descriptions-item>
       <a-descriptions-item label="申请人">{{ leave.applicant_name }}</a-descriptions-item>
       <a-descriptions-item label="部门">{{ leave.applicant_department }}</a-descriptions-item>
-      <a-descriptions-item label="开始时间">{{ leave.start_time }}</a-descriptions-item>
-      <a-descriptions-item label="结束时间">{{ leave.end_time }}</a-descriptions-item>
+      <a-descriptions-item label="开始时间">{{ formatDateTime(leave.start_time) }}</a-descriptions-item>
+      <a-descriptions-item label="结束时间">{{ formatDateTime(leave.end_time) }}</a-descriptions-item>
       <a-descriptions-item label="天数">{{ leave.duration }} 天</a-descriptions-item>
-      <a-descriptions-item label="提交时间">{{ leave.created_at }}</a-descriptions-item>
+      <a-descriptions-item label="提交时间">{{ formatDateTime(leave.created_at) }}</a-descriptions-item>
     </a-descriptions>
 
     <a-card title="请假原因" style="margin-bottom: 24px">
@@ -80,7 +80,7 @@
             <strong>{{ statusLogLabels[log.to_status] || log.to_status }}</strong>
           </p>
           <p class="log-meta">
-            {{ log.operator_name }} · {{ log.created_at }}
+            {{ log.operator_name }} · {{ formatDateTime(log.created_at) }}
           </p>
           <p v-if="log.comment" class="log-comment">备注：{{ log.comment }}</p>
         </a-timeline-item>
@@ -122,6 +122,7 @@ definePageMeta({ middleware: 'auth' })
 
 const route = useRoute()
 const { user } = useAuth()
+const { formatDateTime } = useDateTime()
 const leave = ref<any>(null)
 const approvals = ref<any[]>([])
 const statusLogs = ref<any[]>([])

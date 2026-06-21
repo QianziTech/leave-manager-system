@@ -16,28 +16,18 @@
         </a-select>
       </a-form-item>
 
-      <a-row :gutter="16">
-        <a-col :span="12">
-          <a-form-item label="开始时间" name="startTime">
-            <a-date-picker
-              v-model:value="form.startTime"
-              show-time
-              style="width: 100%"
-              @change="calcDuration"
-            />
-          </a-form-item>
-        </a-col>
-        <a-col :span="12">
-          <a-form-item label="结束时间" name="endTime">
-            <a-date-picker
-              v-model:value="form.endTime"
-              show-time
-              style="width: 100%"
-              @change="calcDuration"
-            />
-          </a-form-item>
-        </a-col>
-      </a-row>
+      <a-form-item label="请假时间" name="timeRange">
+        <a-range-picker
+          v-model:value="form.timeRange"
+          :show-time="{ format: 'HH:mm' }"
+          format="YYYY-MM-DD HH:mm"
+          style="width: 100%"
+          :disabled-date="disabledDate"
+          :disabled-time="disabledTime"
+          :placeholder="['开始时间', '结束时间']"
+          @change="calcDuration"
+        />
+      </a-form-item>
 
       <a-form-item label="请假天数">
         <a-input-number v-model:value="form.duration" :min="0.5" :step="0.5" style="width: 160px" addon-after="天" />
@@ -75,33 +65,80 @@ const submitting = ref(false)
 
 const form = reactive({
   type: props.initialValues?.type || undefined,
-  startTime: props.initialValues?.startTime ? dayjs(props.initialValues.startTime) : undefined,
-  endTime: props.initialValues?.endTime ? dayjs(props.initialValues.endTime) : undefined,
+  timeRange: props.initialValues?.startTime && props.initialValues?.endTime
+    ? [dayjs(props.initialValues.startTime), dayjs(props.initialValues.endTime)]
+    : undefined,
   duration: props.initialValues?.duration || undefined,
   reason: props.initialValues?.reason || '',
 })
 
 const rules = {
   type: [{ required: true, message: '请选择请假类型' }],
-  startTime: [{ required: true, message: '请选择开始时间' }],
-  endTime: [{ required: true, message: '请选择结束时间' }],
+  timeRange: [{ required: true, validator: validateTimeRange, trigger: 'change' }],
   reason: [{ required: true, message: '请输入请假原因' }],
 }
 
 function calcDuration() {
-  if (form.startTime && form.endTime) {
-    const diff = dayjs(form.endTime).diff(dayjs(form.startTime), 'hour') / 24
+  const [startTime, endTime] = form.timeRange || []
+  if (startTime && endTime) {
+    const diff = dayjs(endTime).diff(dayjs(startTime), 'hour') / 24
     form.duration = Math.max(0.5, Math.round(diff * 2) / 2)
   }
+}
+
+function validateTimeRange(_rule: any, value: any) {
+  const [startTime, endTime] = value || []
+
+  if (!startTime || !endTime) {
+    return Promise.reject(new Error('请选择请假时间段'))
+  }
+  if (dayjs(startTime).isBefore(dayjs().startOf('minute'))) {
+    return Promise.reject(new Error('开始时间不能早于当前时间'))
+  }
+  if (dayjs(endTime).isBefore(dayjs(startTime))) {
+    return Promise.reject(new Error('结束时间不能早于开始时间'))
+  }
+
+  return Promise.resolve()
+}
+
+function disabledDate(current: any) {
+  return current && dayjs(current).isBefore(dayjs().startOf('day'))
+}
+
+function disabledTime(current: any, type: 'start' | 'end') {
+  const now = dayjs().startOf('minute')
+  const startTime = form.timeRange?.[0]
+  const minTime = type === 'end' && startTime && dayjs(current).isSame(startTime, 'day')
+    ? dayjs(startTime)
+    : now
+
+  if (!current || !dayjs(current).isSame(minTime, 'day')) {
+    return {}
+  }
+
+  const minHour = minTime.hour()
+  const minMinute = minTime.minute()
+  return {
+    disabledHours: () => range(0, minHour),
+    disabledMinutes: (selectedHour: number) => (
+      selectedHour === minHour ? range(0, minMinute) : []
+    ),
+  }
+}
+
+function range(start: number, end: number) {
+  return Array.from({ length: end - start }, (_item, index) => start + index)
 }
 
 async function handleSubmit() {
   submitting.value = true
   try {
+    const [startTime, endTime] = form.timeRange || []
     emit('submit', {
       type: form.type,
-      startTime: form.startTime?.toISOString(),
-      endTime: form.endTime?.toISOString(),
+      startTime: startTime?.toISOString(),
+      endTime: endTime?.toISOString(),
       duration: form.duration,
       reason: form.reason,
     })

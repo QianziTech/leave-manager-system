@@ -14,7 +14,7 @@
             :description="`${leaveTypeLabels[approval.leave_type] || approval.leave_type} — ${approval.duration} 天`"
           />
           <p style="margin-top: 8px">{{ approval.reason }}</p>
-          <p class="date-range">{{ approval.start_time }} ~ {{ approval.end_time }}</p>
+          <p class="date-range">{{ formatDateTime(approval.start_time) }} ~ {{ formatDateTime(approval.end_time) }}</p>
           <p class="dept-info">{{ approval.applicant_department }}</p>
           <a-space style="margin-top: 8px" @click.stop>
             <a-button type="primary" size="small" @click="handleAction(approval.id, 'approve')">
@@ -39,6 +39,7 @@ import { leaveTypeLabels } from '~/composables/useLabels'
 definePageMeta({ middleware: 'auth' })
 
 const approvalList = ref<any[]>([])
+const { formatDateTime } = useDateTime()
 
 async function fetchPending() {
   try {

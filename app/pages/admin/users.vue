@@ -103,7 +103,6 @@ definePageMeta({ middleware: ['auth', 'admin'] })
 
 const users = ref<any[]>([])
 const departments = ref<any[]>([])
-const supervisorCandidates = ref<any[]>([])
 const loading = ref(false)
 const modalVisible = ref(false)
 const editingUser = ref<any>(null)
@@ -127,6 +126,33 @@ const columns = [
   { title: '操作', key: 'actions', width: 200 },
 ]
 
+const supervisorCandidates = computed(() => {
+  if (!form.departmentId) {
+    return []
+  }
+
+  return users.value.filter((u: any) =>
+    u.active
+    && u.role === 'supervisor'
+    && u.department_id === form.departmentId
+    && u.id !== editingUser.value?.id,
+  )
+})
+
+watch(
+  () => [form.departmentId, form.role, users.value] as const,
+  () => {
+    if (!form.supervisorId) {
+      return
+    }
+
+    const exists = supervisorCandidates.value.some((u: any) => u.id === form.supervisorId)
+    if (!exists) {
+      form.supervisorId = undefined
+    }
+  },
+)
+
 function filterDeptOption(input: string, option: any) {
   return option.children?.toString().toLowerCase().includes(input.toLowerCase())
 }
@@ -148,14 +174,8 @@ async function fetchDepartments() {
   departments.value = await $fetch('/api/departments/list') as any[]
 }
 
-async function fetchSupervisorCandidates() {
-  const allUsers = await $fetch('/api/users') as any[]
-  supervisorCandidates.value = allUsers.filter(
-    (u: any) => ['supervisor', 'dept_head', 'admin'].includes(u.role) && u.active,
-  )
-}
-
-function openCreateModal() {
+async function openCreateModal() {
+  await fetchUsers()
   editingUser.value = null
   form.username = ''
   form.password = ''
@@ -166,14 +186,16 @@ function openCreateModal() {
   modalVisible.value = true
 }
 
-function openEditModal(user: any) {
-  editingUser.value = user
-  form.username = user.username
+async function openEditModal(user: any) {
+  await fetchUsers()
+  const latestUser = users.value.find((u: any) => u.id === user.id) || user
+  editingUser.value = latestUser
+  form.username = latestUser.username
   form.password = ''
-  form.realName = user.real_name
-  form.departmentId = user.department_id
-  form.role = user.role
-  form.supervisorId = user.supervisor_id
+  form.realName = latestUser.real_name
+  form.departmentId = latestUser.department_id
+  form.role = latestUser.role
+  form.supervisorId = latestUser.supervisor_id
   modalVisible.value = true
 }
 
@@ -226,6 +248,5 @@ function resetForm() {
 onMounted(() => {
   fetchUsers()
   fetchDepartments()
-  fetchSupervisorCandidates()
 })
 </script>

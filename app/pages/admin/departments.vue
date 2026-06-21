@@ -13,6 +13,9 @@
         <template v-if="column.key === 'manager'">
           {{ record.manager_name || '未指定' }}
         </template>
+        <template v-if="column.key === 'created_at'">
+          {{ formatDateTime(record.created_at) }}
+        </template>
         <template v-if="column.key === 'actions'">
           <a-space>
             <a-button size="small" @click="openEditModal(record)">编辑</a-button>
@@ -66,10 +69,11 @@ import { message } from 'ant-design-vue'
 definePageMeta({ middleware: ['auth', 'admin'] })
 
 const departments = ref<any[]>([])
+const users = ref<any[]>([])
 const loading = ref(false)
 const modalVisible = ref(false)
 const editingDept = ref<any>(null)
-const managerCandidates = ref<any[]>([])
+const { formatDateTime } = useDateTime()
 
 const form = reactive({
   name: '',
@@ -83,6 +87,10 @@ const columns = [
   { title: '创建时间', dataIndex: 'created_at', key: 'created_at' },
   { title: '操作', key: 'actions', width: 200 },
 ]
+
+const managerCandidates = computed(() =>
+  users.value.filter((u: any) => ['supervisor', 'dept_head', 'admin'].includes(u.role) && u.active),
+)
 
 function filterUserOption(input: string, option: any) {
   return option.children?.toString().toLowerCase().includes(input.toLowerCase())
@@ -98,20 +106,19 @@ async function fetchDepartments() {
 }
 
 async function fetchManagerCandidates() {
-  const users = await $fetch('/api/users') as any[]
-  managerCandidates.value = users.filter(
-    (u: any) => ['supervisor', 'dept_head', 'admin'].includes(u.role) && u.active,
-  )
+  users.value = await $fetch('/api/users') as any[]
 }
 
-function openCreateModal() {
+async function openCreateModal() {
+  await fetchManagerCandidates()
   editingDept.value = null
   form.name = ''
   form.managerId = undefined
   modalVisible.value = true
 }
 
-function openEditModal(dept: any) {
+async function openEditModal(dept: any) {
+  await fetchManagerCandidates()
   editingDept.value = dept
   form.name = dept.name
   form.managerId = dept.manager_id
@@ -136,7 +143,7 @@ async function handleSave() {
       })
     }
     modalVisible.value = false
-    await fetchDepartments()
+    await Promise.all([fetchDepartments(), fetchManagerCandidates()])
   } catch (e: any) {
     message.error(e?.data?.statusMessage || '保存部门失败')
   }
