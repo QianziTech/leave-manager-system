@@ -2,7 +2,7 @@
   <div>
     <a-page-header title="请假记录">
       <template #extra>
-        <a-button type="primary" @click="navigateTo('/apply')">
+        <a-button type="primary" @click="router.push('/apply')">
           <FormOutlined /> 申请请假
         </a-button>
       </template>
@@ -30,8 +30,8 @@
         :loading="loading"
         :pagination="pagination"
         row-key="id"
+        :custom-row="customRow"
         @change="handleTableChange"
-        @row-click="handleRowClick"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'type'">
@@ -42,6 +42,9 @@
           </template>
           <template v-if="column.key === 'duration'">
             {{ record.duration }} 天
+          </template>
+          <template v-if="column.key === 'actions'">
+            <NuxtLink :to="`/records/${record.id}`">查看详情</NuxtLink>
           </template>
         </template>
       </a-table>
@@ -54,6 +57,8 @@ import { FormOutlined } from '@ant-design/icons-vue'
 import { leaveTypeLabels } from '~/composables/useLabels'
 
 definePageMeta({ middleware: 'auth' })
+
+const router = useRouter()
 
 const data = ref<any[]>([])
 const loading = ref(false)
@@ -68,15 +73,20 @@ const filters = reactive({
 })
 
 const columns = [
-  { title: '请假类型', key: 'type' },
-  { title: '申请人', dataIndex: 'applicant_name', key: 'applicant' },
-  { title: '部门', dataIndex: 'applicant_department', key: 'dept' },
-  { title: '开始时间', dataIndex: 'start_time', key: 'start' },
-  { title: '结束时间', dataIndex: 'end_time', key: 'end' },
-  { title: '天数', key: 'duration' },
-  { title: '状态', key: 'status' },
-  { title: '提交时间', dataIndex: 'created_at', key: 'created' },
+  { title: '请假类型', key: 'type', width: 80 },
+  { title: '申请人', dataIndex: 'applicant_name', key: 'applicant', width: 100 },
+  { title: '部门', dataIndex: 'applicant_department', key: 'dept', width: 100 },
+  { title: '开始时间', dataIndex: 'start_time', key: 'start', width: 160 },
+  { title: '结束时间', dataIndex: 'end_time', key: 'end', width: 160 },
+  { title: '天数', key: 'duration', width: 70 },
+  { title: '状态', key: 'status', width: 80 },
+  { title: '提交时间', dataIndex: 'created_at', key: 'created', width: 160 },
+  { title: '操作', key: 'actions', width: 80 },
 ]
+
+function customRow() {
+  return { style: { cursor: 'pointer' } }
+}
 
 async function fetchData() {
   loading.value = true
@@ -99,10 +109,6 @@ function handleTableChange(pag: any) {
   pagination.current = pag.current
   pagination.pageSize = pag.pageSize
   fetchData()
-}
-
-function handleRowClick(record: any) {
-  navigateTo(`/records/${record.id}`)
 }
 
 onMounted(fetchData)

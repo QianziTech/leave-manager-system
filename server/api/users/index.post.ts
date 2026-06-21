@@ -1,5 +1,6 @@
 import { getDb } from '../../utils/db'
 import { hashPassword } from '../../utils/auth'
+import { reconcileUserDepartmentManager } from '../../utils/orgSync'
 
 export default defineEventHandler(async (event) => {
   const { role: currentRole } = event.context.user
@@ -7,9 +8,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, statusMessage: '仅管理员可操作' })
   }
 
-  const { username, password, realName, department, role, supervisorId } = await readBody(event)
+  const { username, password, realName, departmentId, role, supervisorId } = await readBody(event)
 
-  if (!username || !password || !realName || !department || !role) {
+  if (!username || !password || !realName || !departmentId || !role) {
     throw createError({ statusCode: 400, statusMessage: '请填写所有必填字段' })
   }
 
@@ -20,9 +21,17 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 409, statusMessage: '用户名已存在' })
   }
 
-  const result = db.prepare(
-    'INSERT INTO users (username, password_hash, real_name, department, role, supervisor_id) VALUES (?, ?, ?, ?, ?, ?)',
-  ).run(username, hashPassword(password), realName, department, role, supervisorId || null)
+  const dept = db.prepare('SELECT id, name FROM departments WHERE id = ?').get(departmentId) as any
+  if (!dept) {
+    throw createError({ statusCode: 400, statusMessage: '部门不存在' })
+  }
 
-  return { id: Number(result.lastInsertRowid), username, realName, department, role, supervisorId: supervisorId || null }
+  const result = db.prepare(
+    'INSERT INTO users (username, password_hash, real_name, department, department_id, role, supervisor_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+  ).run(username, hashPassword(password), realName, dept.name, departmentId, role, supervisorId || null)
+
+  const userId = Number(result.lastInsertRowid)
+  reconcileUserDepartmentManager(db, userId)
+
+  return { id: userId, username, realName, departmentId, departmentName: dept.name, role, supervisorId: supervisorId || null }
 })

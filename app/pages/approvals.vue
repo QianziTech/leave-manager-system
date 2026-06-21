@@ -1,20 +1,22 @@
 <template>
   <div>
     <a-page-header title="待审批列表" />
-    <a-timeline>
+    <a-timeline v-if="approvalList.length">
       <a-timeline-item
         v-for="approval in approvalList"
         :key="approval.id"
         :color="approval.decision === 'approved' ? 'green' : approval.decision === 'rejected' ? 'red' : 'blue'"
       >
-        <a-card size="small">
-          <a-card-meta
+        <NuxtLink :to="`/records/${approval.leave_id}`">
+          <a-card size="small" hoverable>
+            <a-card-meta
             :title="approval.applicant_name"
             :description="`${leaveTypeLabels[approval.leave_type] || approval.leave_type} — ${approval.duration} 天`"
           />
           <p style="margin-top: 8px">{{ approval.reason }}</p>
           <p class="date-range">{{ approval.start_time }} ~ {{ approval.end_time }}</p>
-          <a-space style="margin-top: 8px">
+          <p class="dept-info">{{ approval.applicant_department }}</p>
+          <a-space style="margin-top: 8px" @click.stop>
             <a-button type="primary" size="small" @click="handleAction(approval.id, 'approve')">
               通过
             </a-button>
@@ -23,9 +25,10 @@
             </a-popconfirm>
           </a-space>
         </a-card>
+        </NuxtLink>
       </a-timeline-item>
     </a-timeline>
-    <a-empty v-if="!approvalList.length" description="暂无待审批记录" />
+    <a-empty v-else description="暂无待审批记录" />
   </div>
 </template>
 
@@ -64,5 +67,9 @@ onMounted(fetchPending)
 .date-range {
   color: #999;
   font-size: 13px;
+}
+.dept-info {
+  color: #999;
+  font-size: 12px;
 }
 </style>

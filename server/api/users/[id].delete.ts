@@ -1,4 +1,5 @@
 import { getDb } from '../../utils/db'
+import { reconcileUserDepartmentManager } from '../../utils/orgSync'
 
 export default defineEventHandler(async (event) => {
   const { role: currentRole } = event.context.user
@@ -16,6 +17,7 @@ export default defineEventHandler(async (event) => {
 
   // 软删除
   db.prepare('UPDATE users SET active = 0 WHERE id = ?').run(id)
+  reconcileUserDepartmentManager(db, Number(id))
 
   return { success: true }
 })

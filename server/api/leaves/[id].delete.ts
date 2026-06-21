@@ -1,8 +1,9 @@
 import { getDb } from '../../utils/db'
+import { logStatusChange, StatusEvent } from '../../utils/stateMachine'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
-  const { userId } = event.context.user
+  const { userId, role } = event.context.user
   const db = getDb()
 
   const leave = db.prepare('SELECT * FROM leaves WHERE id = ?').get(id) as any
@@ -20,6 +21,14 @@ export default defineEventHandler(async (event) => {
   }
 
   db.prepare("UPDATE leaves SET status = 'withdrawn', updated_at = datetime('now') WHERE id = ?").run(id)
+
+  logStatusChange(db, {
+    leaveId: Number(id),
+    fromStatus: StatusEvent.SUBMITTED,
+    toStatus: StatusEvent.WITHDRAWN,
+    operatorId: userId,
+    operatorRole: role,
+  })
 
   return { success: true }
 })

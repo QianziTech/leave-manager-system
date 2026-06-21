@@ -1,4 +1,6 @@
 import { getDb } from '../../utils/db'
+import { logStatusChange, StatusEvent } from '../../utils/stateMachine'
+import { assertApprovalFlowReady, createApprovalRecords, resolveApprovalFlow } from '../../utils/approvalFlow'
 
 export default defineEventHandler(async (event) => {
   const { userId, role } = event.context.user
@@ -15,31 +17,26 @@ export default defineEventHandler(async (event) => {
   const db = getDb()
 
   const applicantId = role === 'admin' ? (await readBody(event)).userId || userId : userId
-  const user = db.prepare('SELECT supervisor_id FROM users WHERE id = ? AND active = 1').get(applicantId) as any
-  if (!user) {
-    throw createError({ statusCode: 404, statusMessage: '用户不存在' })
-  }
+  const flow = resolveApprovalFlow(db, applicantId, duration)
+  assertApprovalFlowReady(flow)
 
   const result = db.prepare(
     'INSERT INTO leaves (user_id, type, start_time, end_time, duration, reason) VALUES (?, ?, ?, ?, ?, ?)',
   ).run(applicantId, type, startTime, endTime, duration, reason)
 
   const leaveId = Number(result.lastInsertRowid)
-
-  // 创建审批记录
-  // 一级审批：直属主管
-  if (user.supervisor_id) {
-    db.prepare('INSERT INTO approvals (leave_id, approver_id, level) VALUES (?, ?, 1)').run(leaveId, user.supervisor_id)
-  }
-
-  // 二级审批：部门经理（请假超过3天）
-  if (duration > 3) {
-    const deptHead = db.prepare("SELECT id FROM users WHERE department = (SELECT department FROM users WHERE id = ?) AND role = 'dept_head' AND active = 1 LIMIT 1").get(applicantId) as any
-    if (deptHead) {
-      db.prepare('INSERT INTO approvals (leave_id, approver_id, level) VALUES (?, ?, 2)').run(leaveId, deptHead.id)
-    }
-  }
+  createApprovalRecords(db, leaveId, flow.levels)
 
   const leave = db.prepare('SELECT * FROM leaves WHERE id = ?').get(leaveId)
+
+  // 记录状态日志
+  logStatusChange(db, {
+    leaveId,
+    fromStatus: '',
+    toStatus: StatusEvent.SUBMITTED,
+    operatorId: applicantId,
+    operatorRole: role,
+  })
+
   return leave
 })

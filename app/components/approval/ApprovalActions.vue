@@ -5,7 +5,7 @@
         <a-textarea v-model:value="comment" :rows="2" placeholder="可选填写审批意见" />
       </a-form-item>
       <a-space>
-        <a-button type="primary" html-type="submit" :loading="loading">通过</a-button>
+        <a-button type="primary" @click="handleApprove" :loading="loading">通过</a-button>
         <a-button danger :loading="loading" @click="handleReject">拒绝</a-button>
       </a-space>
     </a-form>

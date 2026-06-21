@@ -5,7 +5,7 @@
       <a-descriptions bordered :column="1">
         <a-descriptions-item label="用户名">{{ user.username }}</a-descriptions-item>
         <a-descriptions-item label="姓名">{{ user.realName }}</a-descriptions-item>
-        <a-descriptions-item label="部门">{{ user.department }}</a-descriptions-item>
+        <a-descriptions-item label="部门">{{ user.departmentName }}</a-descriptions-item>
         <a-descriptions-item label="角色">{{ roleLabel }}</a-descriptions-item>
       </a-descriptions>
     </a-card>

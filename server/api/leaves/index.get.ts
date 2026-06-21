@@ -8,13 +8,21 @@ export default defineEventHandler(async (event) => {
   let where = '1=1'
   const params: any[] = []
 
+  // 获取当前用户的 department_id
+  const currentUser = db.prepare('SELECT department_id FROM users WHERE id = ?').get(userId) as any
+
   if (role === 'employee') {
     where += ' AND l.user_id = ?'
     params.push(userId)
   } else if (role === 'supervisor' || role === 'dept_head') {
-    where += ' AND l.user_id IN (SELECT id FROM users WHERE supervisor_id = ? OR id = ?)'
-    params.push(userId, userId)
+    // 只能看到本部门的请假记录（自己 + 下属）
+    where += ` AND l.user_id IN (
+      SELECT id FROM users WHERE department_id = ?
+      AND (supervisor_id = ? OR id = ?)
+    )`
+    params.push(currentUser?.department_id, userId, userId)
   }
+  // admin 看到全部（不加限制）
 
   if (query.status) {
     where += ' AND l.status = ?'
@@ -29,8 +37,10 @@ export default defineEventHandler(async (event) => {
   ).get(...params) as any
 
   const leaves = db.prepare(
-    `SELECT l.*, u.real_name as applicant_name, u.department as applicant_department
-     FROM leaves l JOIN users u ON l.user_id = u.id
+    `SELECT l.*, u.real_name as applicant_name, d.name as applicant_department
+     FROM leaves l
+     JOIN users u ON l.user_id = u.id
+     LEFT JOIN departments d ON u.department_id = d.id
      WHERE ${where}
      ORDER BY l.created_at DESC
      LIMIT ? OFFSET ?`,

@@ -1,5 +1,5 @@
 import { getDb } from '../../utils/db'
-import { comparePassword, hashPassword } from '../../utils/auth'
+import { comparePassword } from '../../utils/auth'
 import { createToken } from '../../utils/jwt'
 
 export default defineEventHandler(async (event) => {
@@ -11,7 +11,13 @@ export default defineEventHandler(async (event) => {
 
   const db = getDb()
   const user = db
-    .prepare('SELECT id, username, password_hash, real_name, department, role, supervisor_id, active FROM users WHERE username = ?')
+    .prepare(`
+      SELECT u.id, u.username, u.password_hash, u.real_name, u.department_id,
+             d.name as department_name, u.role, u.supervisor_id, u.active
+      FROM users u
+      LEFT JOIN departments d ON u.department_id = d.id
+      WHERE u.username = ?
+    `)
     .get(username) as any
 
   if (!user || !user.active) {
@@ -39,7 +45,8 @@ export default defineEventHandler(async (event) => {
     id: user.id,
     username: user.username,
     realName: user.real_name,
-    department: user.department,
+    departmentId: user.department_id,
+    departmentName: user.department_name || '',
     role: user.role,
     supervisorId: user.supervisor_id,
   }

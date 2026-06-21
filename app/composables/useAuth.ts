@@ -2,7 +2,8 @@ interface User {
   id: number
   username: string
   realName: string
-  department: string
+  departmentId: number | null
+  departmentName: string
   role: 'employee' | 'supervisor' | 'dept_head' | 'admin'
   supervisorId: number | null
   createdAt?: string
