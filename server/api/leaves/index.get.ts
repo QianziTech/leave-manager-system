@@ -14,8 +14,18 @@ export default defineEventHandler(async (event) => {
   if (role === 'employee') {
     where += ' AND l.user_id = ?'
     params.push(userId)
-  } else if (role === 'supervisor' || role === 'dept_head') {
-    // 只能看到本部门的请假记录（自己 + 下属）
+  } else if (role === 'dept_head') {
+    // 主管可查看本部门全员，以及自己作为审批人的请假记录
+    where += ` AND (
+      l.user_id IN (SELECT id FROM users WHERE department_id = ?)
+      OR EXISTS (
+        SELECT 1 FROM approvals a
+        WHERE a.leave_id = l.id AND a.approver_id = ?
+      )
+    )`
+    params.push(currentUser?.department_id, userId)
+  } else if (role === 'supervisor') {
+    // 部门经理只能看到本部门的请假记录（自己 + 下属）
     where += ` AND l.user_id IN (
       SELECT id FROM users WHERE department_id = ?
       AND (supervisor_id = ? OR id = ?)

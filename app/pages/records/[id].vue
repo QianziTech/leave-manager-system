@@ -138,6 +138,7 @@ const canWithdraw = computed(() => canEdit.value)
 
 const canApprove = computed(() => {
   if (!['supervisor', 'dept_head', 'admin'].includes(user.value?.role || '')) return false
+  if (leave.value?.status !== 'pending') return false
   return approvals.value.some(
     (a: any) => a.approver_id === user.value?.id && a.decision === null,
   )

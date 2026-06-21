@@ -92,8 +92,8 @@ function validateTimeRange(_rule: any, value: any) {
   if (!startTime || !endTime) {
     return Promise.reject(new Error('请选择请假时间段'))
   }
-  if (dayjs(startTime).isBefore(dayjs().startOf('minute'))) {
-    return Promise.reject(new Error('开始时间不能早于当前时间'))
+  if (dayjs(startTime).isBefore(dayjs().startOf('day'))) {
+    return Promise.reject(new Error('开始日期不能早于今天'))
   }
   if (dayjs(endTime).isBefore(dayjs(startTime))) {
     return Promise.reject(new Error('结束时间不能早于开始时间'))
@@ -107,16 +107,12 @@ function disabledDate(current: any) {
 }
 
 function disabledTime(current: any, type: 'start' | 'end') {
-  const now = dayjs().startOf('minute')
   const startTime = form.timeRange?.[0]
-  const minTime = type === 'end' && startTime && dayjs(current).isSame(startTime, 'day')
-    ? dayjs(startTime)
-    : now
-
-  if (!current || !dayjs(current).isSame(minTime, 'day')) {
+  if (type !== 'end' || !current || !startTime || !dayjs(current).isSame(startTime, 'day')) {
     return {}
   }
 
+  const minTime = dayjs(startTime)
   const minHour = minTime.hour()
   const minMinute = minTime.minute()
   return {
